@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienes Raices</title>
+    <link rel="stylesheet" href="build/css/app.css">
+</head>
+<body>
+    
+    <header class="header">
+        <div class="contenedor contenido-header">
+            <div class="barra">
+                <a href="/">
+                    <img src="build/img/logo.svg" alt="Logotipo de Bienes Raices">
+                </a>
+
+                <div class="mobile-menu">
+                    <img src="build/img/barras.svg" alt="icono menu responsive">
+                </div>
+
+                <div class="derecha">
+                    <img class="dark-mode-boton" src="build/img/dark-mode.svg">
+                    <nav class="navegacion">
+                        <a href="nosotros.html">Nosotros</a>
+                        <a href="anuncios.html">Anuncios</a>
+                        <a href="blog.html">Blog</a>
+                        <a href="contacto.html">Contacto</a>
+                    </nav>
+                </div>
+                
+            </div> <!--.barra-->
+        </div>
+    </header>
+
+    <main class="contenedor seccion contenido-centrado">
+        <h1>Nuestro Blog</h1>
+
+        <div id="entradas-blog">
+            <!-- Las entradas se cargarán dinámicamente aquí -->
+        </div>
+    </main>
+
+    <footer class="footer seccion">
+        <div class="contenedor contenedor-footer">
+            <nav class="navegacion">
+                <a href="nosotros.html">Nosotros</a>
+                <a href="anuncios.html">Anuncios</a>
+                <a href="blog.html">Blog</a>
+                <a href="contacto.html">Contacto</a>
+            </nav>
+        </div>
+
+        <p class="copyright">Todos los derechos Reservados Alejandro Molina & Valentina Arrieta &copy;</p>
+    </footer>
+
+    <script src="build/js/bundle.min.js"></script>
+    <script>
+        // Cargar todas las entradas del blog
+        async function cargarEntradas() {
+            try {
+                const response = await fetch('/api/blog');
+                if (!response.ok) {
+                    throw new Error('Error al cargar entradas');
+                }
+                const entradas = await response.json();
+                mostrarEntradas(entradas);
+            } catch (error) {
+                console.error('Error al cargar entradas:', error);
+                document.getElementById('entradas-blog').innerHTML = '<p>Error al cargar las entradas del blog.</p>';
+            }
+        }
+
+        function mostrarEntradas(entradas) {
+            const contenedor = document.getElementById('entradas-blog');
+            
+            if (entradas.length === 0) {
+                contenedor.innerHTML = '<p>No hay entradas disponibles en este momento.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = entradas.map(entrada => {
+                const fecha = new Date(entrada.fecha || entrada.creado);
+                const fechaFormateada = fecha.toLocaleDateString('es-ES', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric' 
+                });
+                const resumen = entrada.contenido.substring(0, 150) + '...';
+                
+                return `
+                    <article class="entrada-blog">
+                        <div class="imagen">
+                            <picture>
+                                <img loading="lazy" src="${entrada.imagen}" alt="${entrada.titulo}" onerror="this.src='build/img/blog1.jpg'">
+                            </picture>
+                        </div>
+                        <div class="texto-entrada">
+                            <a href="entrada.html?id=${entrada.id}">
+                                <h4>${entrada.titulo}</h4>
+                                <p class="informacion-meta">Escrito el: <span>${fechaFormateada}</span> por: <span>${entrada.autor || 'Admin'}</span></p>
+                                <p>${resumen}</p>
+                            </a>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        // Cargar entradas cuando la página esté lista
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', cargarEntradas);
+        } else {
+            cargarEntradas();
+        }
+    </script>
+</body>
+</html>

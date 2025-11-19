@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienes Raices</title>
+    <link rel="stylesheet" href="build/css/app.css">
+</head>
+<body>
+    
+    <header class="header">
+        <div class="contenedor contenido-header">
+            <div class="barra">
+                <a href="/">
+                    <img src="build/img/logo.svg" alt="Logotipo de Bienes Raices">
+                </a>
+
+                <div class="mobile-menu">
+                    <img src="build/img/barras.svg" alt="icono menu responsive">
+                </div>
+
+                <div class="derecha">
+                    <img class="dark-mode-boton" src="build/img/dark-mode.svg">
+                    <nav class="navegacion">
+                        <a href="nosotros.html">Nosotros</a>
+                        <a href="anuncios.html">Anuncios</a>
+                        <a href="blog.html">Blog</a>
+                        <a href="contacto.html">Contacto</a>
+                    </nav>
+                </div>
+                
+            </div> <!--.barra-->
+        </div>
+    </header>
+
+    <main class="contenedor seccion contenido-centrado">
+        <h1 id="titulo-entrada">Cargando...</h1>
+
+        <picture>
+            <img loading="lazy" id="imagen-entrada" src="build/img/destacada2.jpg" alt="imagen de la entrada">
+        </picture>
+
+        <p class="informacion-meta" id="meta-entrada">Cargando información...</p>
+
+        <div class="resumen-propiedad" id="contenido-entrada">
+            <p>Cargando contenido...</p>
+        </div>
+    </main>
+
+    <footer class="footer seccion">
+        <div class="contenedor contenedor-footer">
+            <nav class="navegacion">
+                <a href="nosotros.html">Nosotros</a>
+                <a href="anuncios.html">Anuncios</a>
+                <a href="blog.html">Blog</a>
+                <a href="contacto.html">Contacto</a>
+            </nav>
+        </div>
+
+        <p class="copyright">Todos los derechos Reservados Alejandro Molina & Valentina Arrieta &copy;</p>
+    </footer>
+
+    <script src="build/js/bundle.min.js"></script>
+    <script>
+        // Cargar entrada específica según el ID en la URL
+        async function cargarEntrada() {
+            try {
+                // Obtener ID de la URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const id = urlParams.get('id');
+                
+                if (!id) {
+                    document.querySelector('main').innerHTML = '<h1>Entrada no encontrada</h1><p>No se especificó un ID de entrada.</p>';
+                    return;
+                }
+                
+                const response = await fetch(`/api/blog/${id}`);
+                
+                if (!response.ok) {
+                    document.querySelector('main').innerHTML = '<h1>Entrada no encontrada</h1><p>La entrada solicitada no existe.</p>';
+                    return;
+                }
+                
+                const entrada = await response.json();
+                
+                // Formatear fecha
+                const fecha = new Date(entrada.fecha || entrada.creado);
+                const fechaFormateada = fecha.toLocaleDateString('es-ES', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric' 
+                });
+                
+                // Actualizar el contenido de la página
+                document.getElementById('titulo-entrada').textContent = entrada.titulo;
+                document.getElementById('imagen-entrada').src = entrada.imagen;
+                document.getElementById('imagen-entrada').alt = entrada.titulo;
+                document.getElementById('meta-entrada').innerHTML = `Escrito el: <span>${fechaFormateada}</span> por: <span>${entrada.autor || 'Admin'}</span>`;
+                
+                // Contenido (dividir en párrafos si tiene saltos de línea)
+                const contenidoDiv = document.getElementById('contenido-entrada');
+                if (entrada.contenido) {
+                    const parrafos = entrada.contenido.split('\n').filter(p => p.trim());
+                    contenidoDiv.innerHTML = parrafos.map(p => `<p>${p}</p>`).join('');
+                } else {
+                    contenidoDiv.innerHTML = '<p>Contenido no disponible.</p>';
+                }
+            } catch (error) {
+                console.error('Error al cargar entrada:', error);
+                document.querySelector('main').innerHTML = '<h1>Error</h1><p>No se pudo cargar la información de la entrada.</p>';
+            }
+        }
+        
+        // Cargar entrada cuando la página esté lista
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', cargarEntrada);
+        } else {
+            cargarEntrada();
+        }
+    </script>
+</body>
+</html>

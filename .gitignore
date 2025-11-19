@@ -1,0 +1,10 @@
+node_modules/
+database/bienesraices.db
+database/bienesraices.db-journal
+*.log
+.DS_Store
+
+
+
+
+

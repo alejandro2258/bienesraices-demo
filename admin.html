@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración | Bienes Raices</title>
+    <link rel="stylesheet" href="build/css/app.css">
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .admin-header h1 {
+            margin: 0;
+        }
+        .boton-logout {
+            background: #dc3545;
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .boton-logout:hover {
+            background: #c82333;
+        }
+        .formulario-propiedad {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+        .formulario-propiedad h2 {
+            margin-top: 0;
+        }
+        .grid-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .campo {
+            display: flex;
+            flex-direction: column;
+        }
+        .campo label {
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        .campo input,
+        .campo textarea {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        .campo textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .boton-submit {
+            background: #28a745;
+            color: white;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .boton-submit:hover {
+            background: #218838;
+        }
+        .lista-propiedades {
+            margin-top: 2rem;
+        }
+        .propiedad-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .propiedad-info {
+            flex: 1;
+        }
+        .propiedad-info h3 {
+            margin: 0 0 0.5rem 0;
+        }
+        .propiedad-info p {
+            margin: 0.25rem 0;
+            color: #666;
+        }
+        .propiedad-acciones {
+            display: flex;
+            gap: 1rem;
+        }
+        .boton-editar {
+            background: #007bff;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .boton-editar:hover {
+            background: #0056b3;
+        }
+        .boton-eliminar {
+            background: #dc3545;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .boton-eliminar:hover {
+            background: #c82333;
+        }
+        /* Modal de edición */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 2rem;
+            border: 1px solid #888;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+        }
+        .mensaje {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        .mensaje.show {
+            display: block;
+        }
+        .mensaje.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .mensaje.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .propiedad-imagen {
+            width: 150px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-right: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Panel de Administración</h1>
+            <button class="boton-logout" onclick="logout()">Cerrar Sesión</button>
+        </div>
+
+        <div id="mensaje" class="mensaje"></div>
+
+        <div class="formulario-propiedad">
+            <h2>Agregar Nueva Propiedad</h2>
+            <form id="formPropiedad" enctype="multipart/form-data">
+                <div class="grid-form">
+                    <div class="campo">
+                        <label for="titulo">Título *</label>
+                        <input type="text" id="titulo" name="titulo" required>
+                    </div>
+                    <div class="campo">
+                        <label for="precio">Precio *</label>
+                        <input type="number" id="precio" name="precio" step="0.01" required>
+                    </div>
+                    <div class="campo">
+                        <label for="imagen">Imagen *</label>
+                        <input type="file" id="imagen" name="imagen" accept="image/*" required>
+                    </div>
+                    <div class="campo">
+                        <label for="wc">Baños</label>
+                        <input type="number" id="wc" name="wc" min="0" value="0">
+                    </div>
+                    <div class="campo">
+                        <label for="estacionamiento">Estacionamientos</label>
+                        <input type="number" id="estacionamiento" name="estacionamiento" min="0" value="0">
+                    </div>
+                    <div class="campo">
+                        <label for="habitaciones">Habitaciones</label>
+                        <input type="number" id="habitaciones" name="habitaciones" min="0" value="0">
+                    </div>
+                </div>
+                <div class="campo">
+                    <label for="descripcion">Descripción</label>
+                    <textarea id="descripcion" name="descripcion"></textarea>
+                </div>
+                <button type="submit" class="boton-submit">Agregar Propiedad</button>
+            </form>
+        </div>
+
+        <div class="lista-propiedades">
+            <h2>Propiedades Existentes</h2>
+            <div id="listaPropiedades"></div>
+        </div>
+    </div>
+
+    <!-- Modal de Edición -->
+    <div id="modalEditar" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="cerrarModal()">&times;</span>
+            <h2>Editar Propiedad</h2>
+            <form id="formEditar" enctype="multipart/form-data">
+                <input type="hidden" id="editarId" name="id">
+                <div class="grid-form">
+                    <div class="campo">
+                        <label for="editarTitulo">Título *</label>
+                        <input type="text" id="editarTitulo" name="titulo" required>
+                    </div>
+                    <div class="campo">
+                        <label for="editarPrecio">Precio *</label>
+                        <input type="number" id="editarPrecio" name="precio" step="0.01" required>
+                    </div>
+                    <div class="campo">
+                        <label for="editarImagen">Imagen (dejar vacío para mantener la actual)</label>
+                        <input type="file" id="editarImagen" name="imagen" accept="image/*">
+                        <small id="imagenActual" style="display: block; margin-top: 0.5rem; color: #666;"></small>
+                    </div>
+                    <div class="campo">
+                        <label for="editarWc">Baños</label>
+                        <input type="number" id="editarWc" name="wc" min="0" value="0">
+                    </div>
+                    <div class="campo">
+                        <label for="editarEstacionamiento">Estacionamientos</label>
+                        <input type="number" id="editarEstacionamiento" name="estacionamiento" min="0" value="0">
+                    </div>
+                    <div class="campo">
+                        <label for="editarHabitaciones">Habitaciones</label>
+                        <input type="number" id="editarHabitaciones" name="habitaciones" min="0" value="0">
+                    </div>
+                </div>
+                <div class="campo">
+                    <label for="editarDescripcion">Descripción</label>
+                    <textarea id="editarDescripcion" name="descripcion"></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                    <button type="submit" class="boton-submit">Guardar Cambios</button>
+                    <button type="button" class="boton-eliminar" onclick="cerrarModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Verificar autenticación al cargar
+        window.addEventListener('DOMContentLoaded', async () => {
+            const response = await fetch('/api/auth/check');
+            const data = await response.json();
+            
+            if (!data.authenticated) {
+                window.location.href = '/admin/login';
+            } else {
+                cargarPropiedades();
+            }
+        });
+
+        // Cargar propiedades
+        async function cargarPropiedades() {
+            try {
+                const response = await fetch('/api/admin/propiedades');
+                if (response.status === 401) {
+                    window.location.href = '/admin/login';
+                    return;
+                }
+                const propiedades = await response.json();
+                mostrarPropiedades(propiedades);
+            } catch (error) {
+                mostrarMensaje('Error al cargar propiedades', 'error');
+            }
+        }
+
+        // Mostrar propiedades
+        function mostrarPropiedades(propiedades) {
+            const lista = document.getElementById('listaPropiedades');
+            
+            if (propiedades.length === 0) {
+                lista.innerHTML = '<p>No hay propiedades registradas.</p>';
+                return;
+            }
+
+            lista.innerHTML = propiedades.map(prop => `
+                <div class="propiedad-item">
+                    <img src="${prop.imagen}" alt="${prop.titulo}" class="propiedad-imagen" onerror="this.src='build/img/anuncio1.jpg'">
+                    <div class="propiedad-info">
+                        <h3>${prop.titulo}</h3>
+                        <p><strong>Precio:</strong> $${prop.precio.toLocaleString()}</p>
+                        <p><strong>Baños:</strong> ${prop.wc} | <strong>Estacionamientos:</strong> ${prop.estacionamiento} | <strong>Habitaciones:</strong> ${prop.habitaciones}</p>
+                    </div>
+                    <div class="propiedad-acciones">
+                        <button class="boton-editar" onclick="editarPropiedad(${prop.id})">Editar</button>
+                        <button class="boton-eliminar" onclick="eliminarPropiedad(${prop.id})">Eliminar</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Agregar propiedad
+        document.getElementById('formPropiedad').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            
+            try {
+                const response = await fetch('/api/admin/propiedades', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    mostrarMensaje('Propiedad agregada correctamente', 'success');
+                    e.target.reset();
+                    cargarPropiedades();
+                } else {
+                    mostrarMensaje(data.error || 'Error al agregar propiedad', 'error');
+                }
+            } catch (error) {
+                mostrarMensaje('Error de conexión', 'error');
+            }
+        });
+
+        // Editar propiedad
+        async function editarPropiedad(id) {
+            try {
+                const response = await fetch(`/api/propiedades/${id}`);
+                if (!response.ok) {
+                    mostrarMensaje('Error al cargar la propiedad', 'error');
+                    return;
+                }
+                
+                const propiedad = await response.json();
+                
+                // Llenar el formulario con los datos actuales
+                document.getElementById('editarId').value = propiedad.id;
+                document.getElementById('editarTitulo').value = propiedad.titulo;
+                document.getElementById('editarPrecio').value = propiedad.precio;
+                document.getElementById('editarDescripcion').value = propiedad.descripcion || '';
+                document.getElementById('editarWc').value = propiedad.wc || 0;
+                document.getElementById('editarEstacionamiento').value = propiedad.estacionamiento || 0;
+                document.getElementById('editarHabitaciones').value = propiedad.habitaciones || 0;
+                document.getElementById('editarImagen').value = '';
+                document.getElementById('imagenActual').textContent = `Imagen actual: ${propiedad.imagen}`;
+                
+                // Mostrar el modal
+                document.getElementById('modalEditar').style.display = 'block';
+            } catch (error) {
+                mostrarMensaje('Error al cargar la propiedad', 'error');
+            }
+        }
+
+        // Cerrar modal
+        function cerrarModal() {
+            document.getElementById('modalEditar').style.display = 'none';
+            document.getElementById('formEditar').reset();
+        }
+
+        // Cerrar modal al hacer clic fuera de él
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalEditar');
+            if (event.target == modal) {
+                cerrarModal();
+            }
+        }
+
+        // Manejar el envío del formulario de edición
+        document.getElementById('formEditar').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('editarId').value;
+            const formData = new FormData(e.target);
+            
+            // Asegurarse de que todos los campos se envíen, incluso si están vacíos
+            const titulo = document.getElementById('editarTitulo').value;
+            const precio = document.getElementById('editarPrecio').value;
+            const descripcion = document.getElementById('editarDescripcion').value;
+            const wc = document.getElementById('editarWc').value;
+            const estacionamiento = document.getElementById('editarEstacionamiento').value;
+            const habitaciones = document.getElementById('editarHabitaciones').value;
+            
+            // Si no hay nueva imagen, no incluir el campo de imagen en el FormData
+            const imagenInput = document.getElementById('editarImagen');
+            if (!imagenInput.files || imagenInput.files.length === 0) {
+                formData.delete('imagen');
+            }
+            
+            // Agregar todos los campos explícitamente
+            formData.set('titulo', titulo);
+            formData.set('precio', precio);
+            formData.set('descripcion', descripcion);
+            formData.set('wc', wc);
+            formData.set('estacionamiento', estacionamiento);
+            formData.set('habitaciones', habitaciones);
+            
+            console.log('Enviando datos:', {
+                titulo, precio, descripcion, wc, estacionamiento, habitaciones,
+                tieneImagen: imagenInput.files && imagenInput.files.length > 0
+            });
+            
+            try {
+                const response = await fetch(`/api/admin/propiedades/${id}`, {
+                    method: 'PUT',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    mostrarMensaje('Propiedad actualizada correctamente', 'success');
+                    cerrarModal();
+                    cargarPropiedades();
+                } else {
+                    console.error('Error en respuesta:', data);
+                    mostrarMensaje(data.error || 'Error al actualizar propiedad', 'error');
+                }
+            } catch (error) {
+                console.error('Error de conexión:', error);
+                mostrarMensaje('Error de conexión', 'error');
+            }
+        });
+
+        // Eliminar propiedad
+        async function eliminarPropiedad(id) {
+            if (!confirm('¿Estás seguro de eliminar esta propiedad?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/propiedades/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    mostrarMensaje('Propiedad eliminada correctamente', 'success');
+                    cargarPropiedades();
+                } else {
+                    mostrarMensaje(data.error || 'Error al eliminar propiedad', 'error');
+                }
+            } catch (error) {
+                mostrarMensaje('Error de conexión', 'error');
+            }
+        }
+
+        // Logout
+        async function logout() {
+            try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                window.location.href = '/admin/login';
+            } catch (error) {
+                window.location.href = '/admin/login';
+            }
+        }
+
+        // Mostrar mensajes
+        function mostrarMensaje(mensaje, tipo) {
+            const mensajeDiv = document.getElementById('mensaje');
+            mensajeDiv.textContent = mensaje;
+            mensajeDiv.className = `mensaje ${tipo} show`;
+            setTimeout(() => {
+                mensajeDiv.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
+
