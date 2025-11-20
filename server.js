@@ -1,3 +1,10 @@
+// Cargar variables de entorno si existe dotenv
+try {
+  require('dotenv').config();
+} catch (e) {
+  // dotenv no está instalado, continuar sin él
+}
+
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
@@ -20,12 +27,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Configuración de sesiones
+const isProduction = process.env.NODE_ENV === 'production';
 app.use(session({
-    secret: 'tu-secreto-super-seguro-cambiar-en-produccion',
+    secret: process.env.SESSION_SECRET || 'tu-secreto-super-seguro-cambiar-en-produccion',
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: false, // Cambiar a true en producción con HTTPS
+        secure: isProduction && process.env.HTTPS === 'true', // true en producción con HTTPS
         maxAge: 24 * 60 * 60 * 1000 // 24 horas
     }
 }));
